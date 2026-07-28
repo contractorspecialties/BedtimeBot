@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\IsAdminMiddleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -35,12 +36,7 @@ Route::post('/waitlist', function (Request $request) {
 })->name('waitlist.store');
 
 // Admin Control Center Routes (Protected by Auth and Admin Check)
-Route::middleware(['auth', function ($request, $next) {
-    if (!auth()->user()->is_admin) {
-        abort(403, 'Unauthorized access to the Admin Control Center.');
-    }
-    return $next($request);
-}])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', IsAdminMiddleware::class])->prefix('admin')->name('admin.')->group(function () {
     
     Route::get('/', function () {
         $waitlistEntries = DB::table('waitlist_entries')->latest()->get();
