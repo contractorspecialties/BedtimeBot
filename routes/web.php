@@ -4,6 +4,7 @@ use App\Http\Middleware\IsAdminMiddleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -52,7 +53,6 @@ Route::middleware('guest')->group(function () {
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            // Send admins to the dashboard, anyone else to the homepage
             return auth()->user()->is_admin ? redirect()->route('admin.dashboard') : redirect('/');
         }
 
@@ -60,6 +60,32 @@ Route::middleware('guest')->group(function () {
             'email' => 'The provided credentials do not match our records.',
         ])->onlyInput('email');
     });
+
+    // Custom Beta Welcome Flow
+    Route::get('/welcome/{user}', function (Request $request, App\Models\User $user) {
+        if (!$request->hasValidSignature()) {
+            abort(401, 'This welcome link has expired or is invalid. Please contact support.');
+        }
+        return view('auth.setup_password', ['user' => $user]);
+    })->name('welcome.setup');
+
+    Route::post('/welcome/{user}', function (Request $request, App\Models\User $user) {
+        if (!$request->hasValidSignature()) {
+            abort(401, 'This welcome link has expired or is invalid. Please contact support.');
+        }
+
+        $validated = $request->validate([
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        $user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        Auth::login($user);
+        
+        return redirect('/')->with('success', 'Your account is ready!');
+    })->name('welcome.setup.store');
 });
 
 Route::post('/logout', function (Request $request) {
@@ -72,10 +98,8 @@ Route::post('/logout', function (Request $request) {
 
 // --- Admin Control Center Routes ---
 Route::middleware(['auth', IsAdminMiddleware::class])->prefix('admin')->name('admin.')->group(function () {
-    
     Route::get('/', function () {
         $waitlistEntries = DB::table('waitlist_entries')->latest()->get();
         return view('admin.dashboard', compact('waitlistEntries'));
     })->name('dashboard');
-
 });
