@@ -15,14 +15,8 @@ return new class extends Migration
             $table->boolean('is_admin')->default(false)->after('email');
         });
 
-        Schema::create('children', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('name');
-            $table->unsignedTinyInteger('age')->nullable();
-            $table->timestamps();
-        });
-
+        // The children table is already handled in 0001_01_01_000000_create_users_table
+        
         Schema::create('audit_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('admin_user_id')->constrained('users')->cascadeOnDelete();
@@ -41,7 +35,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('audit_logs');
-        Schema::dropIfExists('children');
         
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn('is_admin');
