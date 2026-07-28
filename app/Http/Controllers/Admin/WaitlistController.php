@@ -47,8 +47,8 @@ class WaitlistController extends Controller
                     ]);
                 }
 
-                // Update the waitlist entry
-                DB::table('waitlist_entries')->where('id', $id)->update([
+                // Update the waitlist entry using $entry->id instead of $id
+                DB::table('waitlist_entries')->where('id', $entry->id)->update([
                     'migrated_at' => now(),
                 ]);
 
@@ -67,7 +67,7 @@ class WaitlistController extends Controller
             // 3. The Auth Handoff (Outside the transaction so it only fires if DB succeeds)
             $signedUrl = URL::temporarySignedRoute(
                 'welcome.setup',
-                now()->addDays(7), // 7-day expiration per Claude's feedback
+                now()->addDays(7), // 7-day expiration
                 ['user' => $user->id]
             );
 
