@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\WaitlistController;
 use App\Http\Middleware\IsAdminMiddleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -98,8 +99,13 @@ Route::post('/logout', function (Request $request) {
 
 // --- Admin Control Center Routes ---
 Route::middleware(['auth', IsAdminMiddleware::class])->prefix('admin')->name('admin.')->group(function () {
+    
     Route::get('/', function () {
-        $waitlistEntries = DB::table('waitlist_entries')->latest()->get();
+        // Only fetch pending entries!
+        $waitlistEntries = DB::table('waitlist_entries')->whereNull('migrated_at')->latest()->get();
         return view('admin.dashboard', compact('waitlistEntries'));
     })->name('dashboard');
+
+    // The new Migration endpoint
+    Route::post('/waitlist/{id}/migrate', [WaitlistController::class, 'migrate'])->name('waitlist.migrate');
 });
