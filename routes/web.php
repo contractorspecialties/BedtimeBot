@@ -33,3 +33,18 @@ Route::post('/waitlist', function (Request $request) {
 
     return back()->with('success', "You're on the list! We can't wait to share the magic with your family.");
 })->name('waitlist.store');
+
+// Admin Control Center Routes (Protected by Auth and Admin Check)
+Route::middleware(['auth', function ($request, $next) {
+    if (!auth()->user()->is_admin) {
+        abort(403, 'Unauthorized access to the Admin Control Center.');
+    }
+    return $next($request);
+}]).prefix('admin')->name('admin.')->group(function () {
+    
+    Route::get('/', function () {
+        $waitlistEntries = DB::table('waitlist_entries')->latest()->get();
+        return view('admin.dashboard', compact('waitlistEntries'));
+    })->name('dashboard');
+
+});
