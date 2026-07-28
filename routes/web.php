@@ -40,7 +40,7 @@ Route::middleware(['auth', function ($request, $next) {
         abort(403, 'Unauthorized access to the Admin Control Center.');
     }
     return $next($request);
-}]).prefix('admin')->name('admin.')->group(function () {
+}])->prefix('admin')->name('admin.')->group(function () {
     
     Route::get('/', function () {
         $waitlistEntries = DB::table('waitlist_entries')->latest()->get();
@@ -48,3 +48,6 @@ Route::middleware(['auth', function ($request, $next) {
     })->name('dashboard');
 
 });
+
+// This brings back all the Laravel Breeze login/logout routes!
+require __DIR__.'/auth.php';
