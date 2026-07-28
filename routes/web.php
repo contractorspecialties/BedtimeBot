@@ -12,6 +12,7 @@ Route::get('/', function () {
 
 Route::post('/waitlist', function (Request $request) {
     $validated = $request->validate([
+        'parent_name' => 'required|string|max:255',
         'email' => 'required|email|unique:waitlist_entries,email',
         'child_name' => 'nullable|string|max:255',
         'child_age' => 'nullable|integer|min:1|max:12',
@@ -23,6 +24,7 @@ Route::post('/waitlist', function (Request $request) {
     ]);
 
     DB::table('waitlist_entries')->insert([
+        'parent_name' => $validated['parent_name'],
         'email' => $validated['email'],
         'child_name' => $validated['child_name'] ?? null,
         'child_age' => $validated['child_age'] ?? null,
