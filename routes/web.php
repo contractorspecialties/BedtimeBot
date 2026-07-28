@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\IsAdminMiddleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
@@ -35,7 +36,39 @@ Route::post('/waitlist', function (Request $request) {
     return back()->with('success', "You're on the list! We can't wait to share the magic with your family.");
 })->name('waitlist.store');
 
-// Admin Control Center Routes (Protected by Auth and Admin Check)
+// --- Authentication Routes ---
+Route::middleware('guest')->group(function () {
+    Route::get('/login', function () {
+        return view('auth.login');
+    })->name('login');
+
+    Route::post('/login', function (Request $request) {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
+
+        if (Auth::attempt($credentials)) {
+            $request->session()->regenerate();
+            // Send admins to the dashboard, anyone else to the homepage
+            return auth()->user()->is_admin ? redirect()->route('admin.dashboard') : redirect('/');
+        }
+
+        return back()->withErrors([
+            'email' => 'The provided credentials do not match our records.',
+        ])->onlyInput('email');
+    });
+});
+
+Route::post('/logout', function (Request $request) {
+    Auth::logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+    return redirect('/');
+})->name('logout');
+
+
+// --- Admin Control Center Routes ---
 Route::middleware(['auth', IsAdminMiddleware::class])->prefix('admin')->name('admin.')->group(function () {
     
     Route::get('/', function () {
@@ -44,6 +77,3 @@ Route::middleware(['auth', IsAdminMiddleware::class])->prefix('admin')->name('ad
     })->name('dashboard');
 
 });
-
-// This brings back all the Laravel Breeze login/logout routes!
-require __DIR__.'/auth.php';
